@@ -1,37 +1,37 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::atomic::{AtomicU8, Ordering}};
 
 pub struct LittleEndian;
 pub struct BigEndian;
 
 pub struct CombinedRegister<E> {
-    left: u8,
-    right: u8,
+    left: AtomicU8,
+    right: AtomicU8,
     endieness: PhantomData<E>,
 }
 
 impl<T> CombinedRegister<T> {
     pub fn new() -> Self {
         CombinedRegister {
-            left: u8::default(),
-            right: u8::default(),
+            left: AtomicU8::new(u8::default()),
+            right: AtomicU8::new(u8::default()),
             endieness: PhantomData,
         }
     }
 
-    pub fn set_left(&mut self, value: u8) {
-        self.left = value;
+    pub fn set_left(&self, value: u8) {
+        self.left.store(value, Ordering::Release);
     }
 
-    pub fn set_right(&mut self, value: u8) {
-        self.right = value;
+    pub fn set_right(&self, value: u8) {
+        self.right.store(value, Ordering::Release);
     }
 
-    pub fn get_left(&self) -> &u8 {
-        &self.left
+    pub fn get_left(&self) -> u8 {
+        self.left.load(Ordering::Relaxed)
     }
 
-    pub fn get_right(&self) -> &u8 {
-        &self.right
+    pub fn get_right(&self) -> u8 {
+        self.right.load(Ordering::Relaxed)
     }
 }
 
@@ -43,23 +43,29 @@ impl<T> Default for CombinedRegister<T> {
 
 impl CombinedRegister<LittleEndian> {
     pub fn get_combined(&self) -> u16 {
-        (self.left as u16) << 8 | (self.right as u16)
+        let l = self.get_left();
+        let r = self.get_right();
+
+        (l as u16) << 8 | (r as u16)
     }
 
     pub fn set_combined(&mut self, value: u16) {
-        self.left = (value >> 8) as u8;
-        self.right = value as u8;
+        self.left.store((value >> 8) as u8, Ordering::Release);
+        self.right.store(value as u8, Ordering::Release);
     }
 }
 
 impl CombinedRegister<BigEndian> {
     pub fn get_combined(&self) -> u16 {
-        (self.right as u16) << 8 | (self.left as u16)
+        let l = self.get_left();
+        let r = self.get_right();
+
+        (r as u16) << 8 | (l as u16)
     }
 
     pub fn set_combined(&mut self, value: u16) {
-        self.right = (value >> 8) as u8;
-        self.left = value as u8;
+        self.right.store((value >> 8) as u8, Ordering::Release);
+        self.left.store(value as u8, Ordering::Release);
     }
 }
 
@@ -94,14 +100,15 @@ impl<T> Default for Registers<T> {
 mod register_tests {
     #[test]
     fn test_combinator() {
+
         use crate::registers::{BigEndian, LittleEndian, Registers};
 
         let mut reg = Registers::<LittleEndian>::default();
 
         reg.ab.set_combined(0x1234);
 
-        assert_eq!(reg.ab.get_left(), &0x12);
-        assert_eq!(reg.ab.get_right(), &0x34);
+        assert_eq!(reg.ab.get_left(), 0x12);
+        assert_eq!(reg.ab.get_right(), 0x34);
 
         assert_eq!(reg.ab.get_combined(), 0x1234);
 
@@ -117,8 +124,8 @@ mod register_tests {
 
         reg.ab.set_combined(0x1234);
 
-        assert_eq!(reg.ab.get_left(), &0x34);
-        assert_eq!(reg.ab.get_right(), &0x12);
+        assert_eq!(reg.ab.get_left(), 0x34);
+        assert_eq!(reg.ab.get_right(), 0x12);
 
         assert_eq!(reg.ab.get_combined(), 0x1234);
 

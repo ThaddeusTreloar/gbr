@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::atomic::AtomicU8};
 
 use crate::error::{MbcReadError, MbcWriteError};
 
@@ -15,7 +15,7 @@ const RAM_BANK_END: u16 = 0xBFFF;
 
 pub struct MbcOne<T, M> {
     pub rom: [u8; 0x4000],
-    pub ram: [u8; 0xB8000],
+    pub ram: [AtomicU8; 0xB8000],
     pub rom_bank_low: u8,
     pub ram_bank_upper: u8,
     pub ram_enabled: PhantomData<T>,

@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicU8;
+
 use crate::mbc::{MbcRead, MbcWrite};
 
 const HEADER_START: u16 =  0x100;
@@ -43,7 +45,7 @@ where T: MbcRead + MbcWrite
 {
   header: Header,
   rom: u8,
-  ram: u8,
+  ram: AtomicU8,
   mbc: T,
 }
 
