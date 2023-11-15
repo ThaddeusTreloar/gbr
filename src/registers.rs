@@ -19,19 +19,19 @@ impl<T> CombinedRegister<T> {
     }
 
     pub fn set_left(&self, value: u8) {
-        self.left.store(value, Ordering::Release);
+        self.left.store(value, Ordering::SeqCst);
     }
 
     pub fn set_right(&self, value: u8) {
-        self.right.store(value, Ordering::Release);
+        self.right.store(value, Ordering::SeqCst);
     }
 
     pub fn get_left(&self) -> u8 {
-        self.left.load(Ordering::Acquire)
+        self.left.load(Ordering::SeqCst)
     }
 
     pub fn get_right(&self) -> u8 {
-        self.right.load(Ordering::Acquire)
+        self.right.load(Ordering::SeqCst)
     }
 }
 
