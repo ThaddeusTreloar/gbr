@@ -27,11 +27,11 @@ impl<T> CombinedRegister<T> {
     }
 
     pub fn get_left(&self) -> u8 {
-        self.left.load(Ordering::Relaxed)
+        self.left.load(Ordering::Acquire)
     }
 
     pub fn get_right(&self) -> u8 {
-        self.right.load(Ordering::Relaxed)
+        self.right.load(Ordering::Acquire)
     }
 }
 
@@ -50,8 +50,8 @@ impl CombinedRegister<LittleEndian> {
     }
 
     pub fn set_combined(&mut self, value: u16) {
-        self.left.store((value >> 8) as u8, Ordering::Release);
-        self.right.store(value as u8, Ordering::Release);
+        self.set_left((value >> 8) as u8);
+        self.set_right(value as u8);
     }
 }
 
@@ -64,8 +64,8 @@ impl CombinedRegister<BigEndian> {
     }
 
     pub fn set_combined(&mut self, value: u16) {
-        self.right.store((value >> 8) as u8, Ordering::Release);
-        self.left.store(value as u8, Ordering::Release);
+        self.set_right((value >> 8) as u8);
+        self.set_left(value as u8);
     }
 }
 
